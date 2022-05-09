@@ -1,4 +1,3 @@
-
 name: CI
 
 on:
@@ -7,6 +6,7 @@ on:
         - 0.11.0-aliucord
 
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build-android:
