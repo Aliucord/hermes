@@ -35,8 +35,7 @@ CallResult<HermesValue> aliuFSmkdir(void *, Runtime *runtime, NativeArgs args) {
 
   ::hermes::hermesLog("AliuHermes", "AliuFS.mkdir %s", path.c_str());
 
-  if (!mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) {
-    ::hermes::hermesLog("AliuHermes", "AliuFS.mkdir err %s", strerror(errno));
+  if (mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) {
     if (errno != EEXIST)
       return runtime->raiseError(strerror(errno));
   }
