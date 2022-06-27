@@ -151,6 +151,7 @@ NATIVE_FUNCTION(hermesInternalDrainJobs)
 NATIVE_FUNCTION(hermesInternalGetBytecode)
 NATIVE_FUNCTION(hermesInternalRun)
 NATIVE_FUNCTION(hermesInternalFindStrings)
+NATIVE_FUNCTION(hermesInternalUnfreeze)
 // AliuFS
 NATIVE_FUNCTION(aliuFSmkdir)
 NATIVE_FUNCTION(aliuFSreaddir)

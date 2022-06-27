@@ -1457,7 +1457,7 @@ class JSObject : public GCCell {
       Handle<> value,
       PropOpFlags opFlags);
 
- protected:
+ public:
   /// Flags affecting the entire object.
   ObjectFlags flags_{};
 
@@ -1467,6 +1467,7 @@ class JSObject : public GCCell {
   /// The dynamically derived "class" of the object, describing its fields in
   /// order.
   GCPointer<HiddenClass> clazz_{};
+ protected:
 
   /// Storage for property values.
   GCPointer<PropStorage> propStorage_{};

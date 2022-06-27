@@ -444,6 +444,7 @@ STR(AliuHermes, "AliuHermes")
 STR(getBytecode, "getBytecode")
 STR(run, "run")
 STR(findStrings, "findStrings")
+STR(unfreeze, "unfreeze")
 
 STR(AliuFS, "AliuFS")
 STR(mkdir, "mkdir")

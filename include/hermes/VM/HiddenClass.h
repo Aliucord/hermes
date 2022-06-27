@@ -536,11 +536,13 @@ class HiddenClass final : public GCCell {
       SymbolID name,
       NamedPropertyDescriptor desc);
 
+ public:
   /// Construct a property map by walking back the chain of hidden classes and
   /// store it in \c propertyMap_.
   static void initializeMissingPropertyMap(
       Handle<HiddenClass> selfHandle,
       Runtime *runtime);
+ private:
 
   /// Initialize the property map by transferring the parent's map to ourselves
   /// and adding a our property to it. It must only be called if we don't have a
@@ -569,8 +571,10 @@ class HiddenClass final : public GCCell {
   /// The flags of the added symbol.
   const PropertyFlags propertyFlags_;
 
+ public:
   /// Flags associated with this hidden class.
   ClassFlags flags_{};
+ private:
 
   /// Total number of properties encoded in the entire chain from this class
   /// to the root. Note that some transitions do not introduce a new property,
@@ -579,6 +583,7 @@ class HiddenClass final : public GCCell {
   /// property.
   unsigned numProperties_;
 
+ public:
   /// Optional property map of all properties defined by this hidden class.
   /// This includes \c symbolID_, \c parent_->symbolID_, \c
   /// parent_->parent_->symbolID_ and so on (in reverse order).
@@ -587,6 +592,7 @@ class HiddenClass final : public GCCell {
   ///
   /// NOTE: May be cleared by the GC for any HiddenClass not in a Handle.
   GCPointer<DictPropertyMap> propertyMap_{};
+ private:
 
   /// This hash table encodes the transitions from this class to child classes
   /// keyed on the property being added (or updated) and its flags.

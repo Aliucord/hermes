@@ -3,6 +3,7 @@
 #include "hermes/BCGen/HBC/Bytecode.h"
 #include "hermes/BCGen/HBC/BytecodeDisassembler.h"
 #include "hermes/BCGen/HBC/HBC.h"
+#include "hermes/VM/HiddenClass.h"
 
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -14,7 +15,7 @@
 namespace hermes {
 namespace vm {
 
-// AliuHermes - HermesInternal.getBytecode(function)
+// AliuHermes.getBytecode(function)
 CallResult<HermesValue>
 hermesInternalGetBytecode(void *, Runtime *runtime, NativeArgs args) {
   auto func = args.dyncastArg<Callable>(0);
@@ -156,7 +157,7 @@ class MappedFileBuffer : public Buffer {
   int fd_;
 };
 
-// AliuHermes - HermesInternal.run(path: string)
+// AliuHermes.run(path: string)
 CallResult<HermesValue>
 hermesInternalRun(void *, Runtime *runtime, NativeArgs args) {
   if (!args.getArg(0).isString()) {
@@ -273,7 +274,7 @@ class StringVisitor : public BytecodeVisitor {
       : BytecodeVisitor(bcProvider), array_(array), runtime_(runtime) {}
 };
 
-// AliuHermes - HermesInternal.findStrings(function): string[]
+// AliuHermes.findStrings(function): string[]
 CallResult<HermesValue>
 hermesInternalFindStrings(void *, Runtime *runtime, NativeArgs args) {
   auto func = args.dyncastArg<JSFunction>(0);
@@ -296,6 +297,76 @@ hermesInternalFindStrings(void *, Runtime *runtime, NativeArgs args) {
   visitor.visitInstructionsInFunction(funcId);
 
   return visitor.array_.getHermesValue();
+}
+
+void allowExtensions(Handle<JSObject> selfHandle, Runtime *runtime) {
+  if (LLVM_UNLIKELY(selfHandle->isProxyObject())) {
+    auto target = runtime->makeHandle(detail::slots(*selfHandle).target);
+    allowExtensions(target, runtime);
+    return;
+  }
+
+  selfHandle->flags_.noExtend = false;
+}
+
+// reversed HiddenClass::makeAllReadOnly
+Handle<HiddenClass> makeAllWriteable(
+    Handle<HiddenClass> selfHandle,
+    Runtime *runtime) {
+  if (!selfHandle->propertyMap_)
+    HiddenClass::initializeMissingPropertyMap(selfHandle, runtime);
+
+  auto mapHandle = runtime->makeHandle(selfHandle->propertyMap_);
+
+  MutableHandle<HiddenClass> curHandle{runtime, *selfHandle};
+
+  DictPropertyMap::forEachProperty(
+      mapHandle,
+      runtime,
+      [runtime, &curHandle](SymbolID id, NamedPropertyDescriptor desc) {
+        PropertyFlags newFlags = desc.flags;
+        if (!newFlags.accessor) {
+          newFlags.writable = 1;
+          newFlags.configurable = 1;
+        } else {
+          newFlags.configurable = 1;
+        }
+        if (desc.flags == newFlags)
+          return;
+
+        assert(
+            curHandle->propertyMap_ &&
+            "propertyMap must exist after updateOwnProperty()");
+
+        auto found =
+            DictPropertyMap::find(curHandle->propertyMap_.get(runtime), id);
+        assert(found && "property not found during enumeration");
+        curHandle = *HiddenClass::updateProperty(curHandle, runtime, *found, newFlags);
+      });
+
+  curHandle->flags_.allNonConfigurable = false;
+  curHandle->flags_.allReadOnly = false;
+
+  return std::move(curHandle);
+}
+
+// AliuHermes.unfreeze<T>(T): T
+CallResult<HermesValue>
+hermesInternalUnfreeze(void *, Runtime *runtime, NativeArgs args) {
+  auto objHandle = args.dyncastArg<JSObject>(0);
+  if (!objHandle) {
+    return args.getArg(0);
+  }
+
+  allowExtensions(objHandle, runtime);
+
+  auto newClazz = makeAllWriteable(runtime->makeHandle(objHandle->clazz_), runtime);
+  objHandle->clazz_.setNonNull(runtime, *newClazz, &runtime->getHeap());
+
+  objHandle->flags_.frozen = false;
+  objHandle->flags_.sealed = false;
+
+  return objHandle.getHermesValue();
 }
 
 Handle<JSObject> createAliuHermesObject(
@@ -326,6 +397,7 @@ Handle<JSObject> createAliuHermesObject(
   defineInternMethod(P::getBytecode, hermesInternalGetBytecode);
   defineInternMethod(P::run, hermesInternalRun);
   defineInternMethod(P::findStrings, hermesInternalFindStrings);
+  defineInternMethod(P::unfreeze, hermesInternalUnfreeze);
 
   JSObject::preventExtensions(*intern);
 
