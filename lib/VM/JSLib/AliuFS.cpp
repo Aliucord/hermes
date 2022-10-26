@@ -6,6 +6,7 @@
 #include <cstring>
 #include <random>
 #include "hermes/VM/JSArrayBuffer.h"
+#include <cstdio>
 
 namespace hermes {
 namespace vm {
@@ -250,7 +251,43 @@ aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
     return buffer.getHermesValue();
   }
 
-  return runtime->raiseTypeError("Encoding has to be \"text\" or \"binary\"");
+  return runtime->raiseTypeError(R"(Encoding has to be "text" or "binary")");
+}
+
+// AliuFS.remove(path: string, opts?: Record<"force" | "recursive", boolean>): void
+CallResult<HermesValue> aliuFSremove(void *, Runtime *runtime, NativeArgs args) {
+  auto pathHandle = args.dyncastArg<StringPrimitive>(0);
+  if (!pathHandle) {
+    return runtime->raiseTypeError("path has to be a string");
+  }
+  auto path = toString(runtime, pathHandle);
+
+  bool force = false;
+  bool recursive;
+  if (auto opts = args.dyncastArg<JSObject>(1)) {
+#define GET_PROP(variable, prop) do { \
+    auto res = JSObject::getNamed_RJS(opts, runtime, prop); \
+    if (LLVM_UNLIKELY(res == ExecutionStatus::EXCEPTION)) { \
+      return ExecutionStatus::EXCEPTION; \
+    }                                 \
+    variable = (*res)->isBool() && (*res)->getBool(); \
+  } while(false);
+
+    GET_PROP(force, Predefined::getSymbolID(Predefined::force));
+    GET_PROP(recursive, Predefined::getSymbolID(Predefined::recursive));
+#undef GET_PROP
+    if (recursive) {
+      return runtime->raiseError("Oops recursive not implemented yet :troll:");
+    }
+  } else if (!args.getArg(1).isUndefined()) {
+    return runtime->raiseTypeError("options has to be an object");
+  }
+
+  bool existed = std::remove(path.c_str()) || force;
+  if (!existed) {
+    return runtime->raiseError(static_cast<const StringRef>(
+        "ENOENT: No such file or directory, " + path))
+  }
 }
 
 Handle<JSObject> createAliuFSObject(Runtime *runtime, const JSLibFlags &flags) {
@@ -281,6 +318,8 @@ Handle<JSObject> createAliuFSObject(Runtime *runtime, const JSLibFlags &flags) {
   defineInternMethod(P::exists, aliuFSexists);
   defineInternMethod(P::writeFile, aliuFSwriteFile);
   defineInternMethod(P::readFile, aliuFSreadFile);
+  defineInternMethod(P::remove, aliuFSremove);
+
 
   JSObject::preventExtensions(*intern);
 
