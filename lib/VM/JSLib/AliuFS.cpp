@@ -236,6 +236,7 @@ aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
     if (LLVM_UNLIKELY(
             buffer->createDataBlock(runtime, size, false) ==
             ExecutionStatus::EXCEPTION)) {
+      fclose(f);
       return ExecutionStatus::EXCEPTION;
     }
 
@@ -250,7 +251,7 @@ aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
     return buffer.getHermesValue();
   }
 
-  return runtime->raiseTypeError("Encoding has to be \"text\" or \"binary\"");
+  return runtime->raiseTypeError(R"(Encoding has to be "text" or "binary")");
 }
 
 Handle<JSObject> createAliuFSObject(Runtime *runtime, const JSLibFlags &flags) {

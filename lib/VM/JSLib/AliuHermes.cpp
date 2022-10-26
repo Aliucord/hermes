@@ -14,6 +14,7 @@
 #include <system_error>
 #include <cstring>
 #include <cstdlib>
+#include <utility>
 
 namespace hermes {
 namespace vm {
@@ -122,42 +123,13 @@ hermesInternalGetBytecode(void *, Runtime *runtime, NativeArgs args) {
   return StringPrimitive::create(runtime, strBuf);
 }
 
-class MappedFileBuffer : public Buffer {
+class SmartBuffer : public Buffer {
+  using Buffer::Buffer;
+
  public:
-  char *error = nullptr;
-
-  explicit MappedFileBuffer(const std::string &fileName) {
-    fd_ = open(fileName.c_str(), O_RDONLY);
-    if (fd_ < 0) {
-      error = strerror(errno);
-      return;
-    }
-    struct stat statbuf;
-    if (fstat(fd_, &statbuf) < 0) {
-      error = strerror(errno);
-      return;
-    }
-    size_ = statbuf.st_size;
-    void *bytecodeFileMap = mmap(
-        /*address*/ nullptr, size_, PROT_READ, MAP_PRIVATE, fd_, /*offset*/ 0);
-    if (bytecodeFileMap == MAP_FAILED) {
-      error = "mmaped failed";
-      return;
-    }
-    data_ = reinterpret_cast<uint8_t *>(bytecodeFileMap);
+  ~SmartBuffer() override {
+    delete[] data_;
   }
-
-  ~MappedFileBuffer() override {
-    if (munmap((void *)data_, size_) < 0) {
-      assert(false && "Failed to munmap MappedFileBuffer");
-    }
-    if (close(fd_) < 0) {
-      assert(false && "Failed to close MappedFileBuffer");
-    }
-  }
-
- private:
-  int fd_;
 };
 
 // AliuHermes.run(path: string, buffer?: ArrayBuffer)
@@ -173,20 +145,26 @@ hermesInternalRun(void *, Runtime *runtime, NativeArgs args) {
   std::unique_ptr<Buffer> buffer;
 
   if (auto arrayBuffer = args.dyncastArg<JSArrayBuffer>(1)) {
-    auto size = arrayBuffer->size();
-    if (!size)
-      return runtime->raiseTypeError("Buffer has to be non empty");
-
-    uint8_t *buf = (uint8_t *)malloc(size);
-    if (!buf) return runtime->raiseError("Failed to alloc buffer for hermes code");
-    std::memcpy(buf, arrayBuffer->getDataBlock(), size);
-    buffer.reset(new Buffer(buf, size));
+    buffer = std::make_unique<Buffer>(arrayBuffer->getDataBlock(), arrayBuffer->size());
   } else if (args.getArg(1).isUndefined()) {
-    auto mappedFileBuffer = new MappedFileBuffer(path);
-    if (mappedFileBuffer->error) {
-      return runtime->raiseError(mappedFileBuffer->error);
+    auto f = fopen(path.c_str(), "rb");
+    if (!f) {
+      return runtime->raiseError(strerror(errno));
     }
-    buffer.reset(mappedFileBuffer);
+
+    fseek(f, 0, SEEK_END);
+    size_t size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    auto *buf = new uint8_t[size];
+    if (fread(buf, sizeof(uint8_t), size, f) != size) {
+      fclose(f);
+      delete[] buf;
+      return runtime->raiseError(strerror(errno));
+    }
+
+    fclose(f);
+    buffer = std::make_unique<SmartBuffer>(buf, size);
   } else {
     return runtime->raiseTypeError("Buffer has to be an ArrayBuffer");
   }
@@ -223,9 +201,9 @@ class StringVisitor : public BytecodeVisitor {
 
   CallResult<HermesValue> makeStr(
       ArrayRef<unsigned char> storage,
-      StringTableEntry entry) {
+      StringTableEntry entry) const {
     if (entry.isUTF16()) {
-      const char16_t *s =
+      const auto *s =
           (const char16_t *)(storage.begin() + entry.getOffset());
       return StringPrimitive::create(runtime_, UTF16Ref{s, entry.getLength()});
     } else {
@@ -283,7 +261,7 @@ class StringVisitor : public BytecodeVisitor {
       std::shared_ptr<hbc::BCProvider> bcProvider,
       hermes::vm::Handle<hermes::vm::JSArray> array,
       Runtime *runtime)
-      : BytecodeVisitor(bcProvider), array_(array), runtime_(runtime) {}
+      : BytecodeVisitor(std::move(bcProvider)), array_(std::move(array)), runtime_(runtime) {}
 };
 
 // AliuHermes.findStrings(function): string[]
