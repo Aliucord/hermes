@@ -286,7 +286,7 @@ CallResult<HermesValue> aliuFSremove(void *, Runtime *runtime, NativeArgs args) 
   bool existed = std::remove(path.c_str()) || force;
   if (!existed) {
     return runtime->raiseError(static_cast<const StringRef>(
-        "ENOENT: No such file or directory, " + path))
+        "ENOENT: No such file or directory, " + path));
   }
 }
 
