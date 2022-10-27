@@ -2,11 +2,11 @@
 
 #include <dirent.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <cstring>
 #include <random>
 #include "hermes/VM/JSArrayBuffer.h"
 #include <cstdio>
+#include <cerrno>
 
 namespace hermes {
 namespace vm {
@@ -38,7 +38,8 @@ CallResult<HermesValue> aliuFSmkdir(void *, Runtime *runtime, NativeArgs args) {
 
   if (mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
     if (errno != EEXIST)
-      return runtime->raiseError(strerror(errno));
+      return runtime->raiseError(static_cast<const StringRef>(
+          std::string(strerror(errno)) + ": " + path));
   }
 
   return HermesValue::encodeUndefinedValue();
@@ -54,8 +55,7 @@ aliuFSexists(void *, Runtime *runtime, NativeArgs args) {
 
   auto path = toString(runtime, pathHandle);
 
-  struct stat buffer;
-  auto exists = stat(path.c_str(), &buffer) == 0;
+  auto exists = access(path.c_str(), F_OK) == 0;
 
   ::hermes::hermesLog(
       "AliuHermes", "AliuFS.exists %s = %d", path.c_str(), exists);
@@ -203,7 +203,7 @@ aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
     }
 
     fseek(f, 0, SEEK_END);
-    auto size = ftell(f);
+    size_t size = ftell(f);
     fseek(f, 0, SEEK_SET);
 
     char s[size];
@@ -228,7 +228,7 @@ aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
     }
 
     fseek(f, 0, SEEK_END);
-    auto size = ftell(f);
+    size_t size = ftell(f);
     fseek(f, 0, SEEK_SET);
 
     auto buffer = runtime->makeHandle(JSArrayBuffer::create(
@@ -263,19 +263,23 @@ CallResult<HermesValue> aliuFSremove(void *, Runtime *runtime, NativeArgs args) 
   auto path = toString(runtime, pathHandle);
 
   bool force = false;
-  bool recursive;
-  if (auto opts = args.dyncastArg<JSObject>(1)) {
-#define GET_PROP(variable, prop) do { \
-    auto res = JSObject::getNamed_RJS(opts, runtime, prop); \
-    if (LLVM_UNLIKELY(res == ExecutionStatus::EXCEPTION)) { \
-      return ExecutionStatus::EXCEPTION; \
-    }                                 \
-    variable = (*res)->isBool() && (*res)->getBool(); \
-  } while(false);
+  bool recursive = false;
 
-    GET_PROP(force, Predefined::getSymbolID(Predefined::force));
-    GET_PROP(recursive, Predefined::getSymbolID(Predefined::recursive));
+  if (auto optsHandle = args.dyncastArg<JSObject>(1)) {
+#define GET_PROP(variable, prop, name) do { \
+    auto res = JSObject::getNamed_RJS(optsHandle, runtime, prop); \
+    if (LLVM_UNLIKELY(res == ExecutionStatus::EXCEPTION)) \
+      return ExecutionStatus::EXCEPTION; \
+    if ((*res)->isUndefined()) break; \
+    if (LLVM_UNLIKELY(!(*res)->isBool())) \
+      return runtime->raiseTypeError(static_cast<const StringRef>(std::string(name) + " has to be a boolean")); \
+    variable = (*res)->getBool(); \
+    } while(false)
+
+    GET_PROP(force, Predefined::getSymbolID(Predefined::force), "force");
+    GET_PROP(recursive, Predefined::getSymbolID(Predefined::recursive), "recursive");
 #undef GET_PROP
+
     if (recursive) {
       return runtime->raiseError("Oops recursive not implemented yet :troll:");
     }
@@ -283,11 +287,13 @@ CallResult<HermesValue> aliuFSremove(void *, Runtime *runtime, NativeArgs args) 
     return runtime->raiseTypeError("options has to be an object");
   }
 
-  bool existed = std::remove(path.c_str()) || force;
-  if (!existed) {
-    return runtime->raiseError(static_cast<const StringRef>(
-        "ENOENT: No such file or directory, " + path));
+  int res = std::remove(path.c_str());
+  if (res == 0 || (errno == ENOENT && force)) {
+    return HermesValue::encodeUndefinedValue();
   }
+
+  return runtime->raiseError(static_cast<const StringRef>(
+      std::string(strerror(errno)) + ": " + path));
 }
 
 Handle<JSObject> createAliuFSObject(Runtime *runtime, const JSLibFlags &flags) {
@@ -297,7 +303,7 @@ Handle<JSObject> createAliuFSObject(Runtime *runtime, const JSLibFlags &flags) {
 
   DefinePropertyFlags constantDPF =
       DefinePropertyFlags::getDefaultNewPropertyFlags();
-  constantDPF.enumerable = 0;
+  constantDPF.enumerable = 1;
   constantDPF.writable = 0;
   constantDPF.configurable = 0;
 

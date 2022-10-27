@@ -831,7 +831,7 @@ Handle<JSObject> createHermesInternalObject(
 
   DefinePropertyFlags constantDPF =
       DefinePropertyFlags::getDefaultNewPropertyFlags();
-  constantDPF.enumerable = 0;
+  constantDPF.enumerable = 1;
   constantDPF.writable = 0;
   constantDPF.configurable = 0;
 
