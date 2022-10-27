@@ -29,7 +29,7 @@ std::string toString(
 CallResult<HermesValue> aliuFSmkdir(void *, Runtime *runtime, NativeArgs args) {
   auto pathHandle = args.dyncastArg<StringPrimitive>(0);
   if (!pathHandle) {
-    return runtime->raiseTypeError("Path has to be a string");
+    return runtime->raiseTypeError("Path must be a string");
   }
 
   auto path = toString(runtime, pathHandle);
@@ -50,7 +50,7 @@ CallResult<HermesValue>
 aliuFSexists(void *, Runtime *runtime, NativeArgs args) {
   auto pathHandle = args.dyncastArg<StringPrimitive>(0);
   if (!pathHandle) {
-    return runtime->raiseTypeError("Path has to be a string");
+    return runtime->raiseTypeError("Path must be a string");
   }
 
   auto path = toString(runtime, pathHandle);
@@ -68,7 +68,7 @@ CallResult<HermesValue>
 aliuFSreaddir(void *, Runtime *runtime, NativeArgs args) {
   auto pathHandle = args.dyncastArg<StringPrimitive>(0);
   if (!pathHandle) {
-    return runtime->raiseTypeError("Path has to be a string");
+    return runtime->raiseTypeError("Path must be a string");
   }
 
   auto path = toString(runtime, pathHandle);
@@ -128,7 +128,7 @@ CallResult<HermesValue>
 aliuFSwriteFile(void *, Runtime *runtime, NativeArgs args) {
   auto pathHandle = args.dyncastArg<StringPrimitive>(0);
   if (!pathHandle) {
-    return runtime->raiseTypeError("Path has to be a string");
+    return runtime->raiseTypeError("Path must be a string");
   }
 
   auto path = toString(runtime, pathHandle);
@@ -173,7 +173,7 @@ aliuFSwriteFile(void *, Runtime *runtime, NativeArgs args) {
   }
 
   return runtime->raiseTypeError(
-      "Content has to be a string or an ArrayBuffer");
+      "Content must be a string or ArrayBuffer");
 }
 
 // AliuFS.readFile(path: string, encoding: "text" | "binary" = "text"): string |
@@ -182,7 +182,7 @@ CallResult<HermesValue>
 aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
   auto pathHandle = args.dyncastArg<StringPrimitive>(0);
   if (!pathHandle) {
-    return runtime->raiseTypeError("Path has to be a string");
+    return runtime->raiseTypeError("Path must be a string");
   }
 
   auto path = toString(runtime, pathHandle);
@@ -191,7 +191,7 @@ aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
 
   auto encodingHandle = args.dyncastArg<StringPrimitive>(1);
   if (!encodingHandle) {
-    return runtime->raiseTypeError("Encoding has to be a string");
+    return runtime->raiseTypeError("Encoding must be a string");
   }
 
   auto encoding = toString(runtime, encodingHandle);
@@ -251,14 +251,14 @@ aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
     return buffer.getHermesValue();
   }
 
-  return runtime->raiseTypeError(R"(Encoding has to be "text" or "binary")");
+  return runtime->raiseTypeError(R"(Encoding must be "text" or "binary")");
 }
 
 // AliuFS.remove(path: string, opts?: Record<"force" | "recursive", boolean>): void
 CallResult<HermesValue> aliuFSremove(void *, Runtime *runtime, NativeArgs args) {
   auto pathHandle = args.dyncastArg<StringPrimitive>(0);
   if (!pathHandle) {
-    return runtime->raiseTypeError("path has to be a string");
+    return runtime->raiseTypeError("path must be a string");
   }
   auto path = toString(runtime, pathHandle);
 
@@ -272,7 +272,7 @@ CallResult<HermesValue> aliuFSremove(void *, Runtime *runtime, NativeArgs args) 
       return ExecutionStatus::EXCEPTION; \
     if ((*res)->isUndefined()) break; \
     if (LLVM_UNLIKELY(!(*res)->isBool())) \
-      return runtime->raiseTypeError(static_cast<const StringRef>(std::string(name) + " has to be a boolean")); \
+      return runtime->raiseTypeError(static_cast<const StringRef>(std::string(name) + " must be a boolean")); \
     variable = (*res)->getBool(); \
     } while(false)
 
@@ -284,7 +284,7 @@ CallResult<HermesValue> aliuFSremove(void *, Runtime *runtime, NativeArgs args) 
       return runtime->raiseError("Oops recursive not implemented yet :troll:");
     }
   } else if (!args.getArg(1).isUndefined()) {
-    return runtime->raiseTypeError("options has to be an object");
+    return runtime->raiseTypeError("options must be an object");
   }
 
   int res = std::remove(path.c_str());

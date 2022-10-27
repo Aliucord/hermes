@@ -124,7 +124,7 @@ hermesInternalGetBytecode(void *, Runtime *runtime, NativeArgs args) {
 
 class MappedFileBuffer : public Buffer {
  public:
-  char *error = nullptr;
+  const char *error = nullptr;
 
   explicit MappedFileBuffer(const std::string &fileName) {
     fd_ = open(fileName.c_str(), O_RDONLY);
@@ -141,7 +141,7 @@ class MappedFileBuffer : public Buffer {
     void *bytecodeFileMap = mmap(
         /*address*/ nullptr, size_, PROT_READ, MAP_PRIVATE, fd_, /*offset*/ 0);
     if (bytecodeFileMap == MAP_FAILED) {
-      error = "mmaped failed";
+      error = "mmap failed";
       return;
     }
     data_ = reinterpret_cast<uint8_t *>(bytecodeFileMap);
@@ -177,10 +177,10 @@ hermesInternalRun(void *, Runtime *runtime, NativeArgs args) {
     if (!size)
       return runtime->raiseTypeError("Buffer has to be non empty");
 
-    uint8_t *buf = (uint8_t *)malloc(size);
+    auto *buf = (uint8_t *)malloc(size);
     if (!buf) return runtime->raiseError("Failed to alloc buffer for hermes code");
     std::memcpy(buf, arrayBuffer->getDataBlock(), size);
-    buffer.reset(new Buffer(buf, size));
+    buffer = std::make_unique<Buffer>(buf, size);
   } else if (args.getArg(1).isUndefined()) {
     auto mappedFileBuffer = new MappedFileBuffer(path);
     if (mappedFileBuffer->error) {
@@ -188,7 +188,7 @@ hermesInternalRun(void *, Runtime *runtime, NativeArgs args) {
     }
     buffer.reset(mappedFileBuffer);
   } else {
-    return runtime->raiseTypeError("Buffer has to be an ArrayBuffer");
+    return runtime->raiseTypeError("Buffer must be an ArrayBuffer");
   }
 
   auto bytecode_err =
