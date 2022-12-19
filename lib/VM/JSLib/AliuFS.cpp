@@ -255,6 +255,48 @@ aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
   return runtime->raiseTypeError(R"(Encoding has to be "text" or "binary")");
 }
 
+// AliuFS.remove(path: string, opts?: Record<"force" | "recursive", boolean>): void
+CallResult<HermesValue> aliuFSremove(void *, Runtime *runtime, NativeArgs args) {
+  auto pathHandle = args.dyncastArg<StringPrimitive>(0);
+  if (!pathHandle) {
+    return runtime->raiseTypeError("path must be a string");
+  }
+  auto path = toString(runtime, pathHandle);
+
+  bool force = false;
+  bool recursive = false;
+
+  if (auto optsHandle = args.dyncastArg<JSObject>(1)) {
+#define GET_PROP(variable, prop, name) do { \
+    auto res = JSObject::getNamed_RJS(optsHandle, runtime, prop); \
+    if (LLVM_UNLIKELY(res == ExecutionStatus::EXCEPTION)) \
+      return ExecutionStatus::EXCEPTION; \
+    if ((*res)->isUndefined()) break; \
+    if (LLVM_UNLIKELY(!(*res)->isBool())) \
+      return runtime->raiseTypeError(static_cast<const StringRef>(std::string(name) + " must be a boolean")); \
+    variable = (*res)->getBool(); \
+    } while(false)
+
+    GET_PROP(force, Predefined::getSymbolID(Predefined::force), "force");
+    GET_PROP(recursive, Predefined::getSymbolID(Predefined::recursive), "recursive");
+#undef GET_PROP
+
+    if (recursive) {
+      return runtime->raiseError("Oops recursive not implemented yet :troll:");
+    }
+  } else if (!args.getArg(1).isUndefined()) {
+    return runtime->raiseTypeError("options must be an object");
+  }
+
+  int res = std::remove(path.c_str());
+  if (res == 0 || (errno == ENOENT && force)) {
+    return HermesValue::encodeUndefinedValue();
+  }
+
+  return runtime->raiseError(static_cast<const StringRef>(
+      std::string(strerror(errno)) + ": " + path));
+}
+
 Handle<JSObject> createAliuFSObject(Runtime *runtime, const JSLibFlags &flags) {
   namespace P = Predefined;
   Handle<JSObject> intern = runtime->makeHandle(JSObject::create(runtime));
