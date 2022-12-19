@@ -252,7 +252,7 @@ aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
     return buffer.getHermesValue();
   }
 
-  return runtime->raiseTypeError(R"(Encoding has to be "text" or "binary")");
+  return runtime->raiseTypeError(R"(Encoding must be "text" or "binary")");
 }
 
 // AliuFS.remove(path: string, opts?: Record<"force" | "recursive", boolean>): void
