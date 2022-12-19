@@ -2,10 +2,11 @@
 
 #include <dirent.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <cstring>
 #include <random>
 #include "hermes/VM/JSArrayBuffer.h"
+#include <cstdio>
+#include <cerrno>
 
 namespace hermes {
 namespace vm {
@@ -28,7 +29,7 @@ std::string toString(
 CallResult<HermesValue> aliuFSmkdir(void *, Runtime *runtime, NativeArgs args) {
   auto pathHandle = args.dyncastArg<StringPrimitive>(0);
   if (!pathHandle) {
-    return runtime->raiseTypeError("Path has to be a string");
+    return runtime->raiseTypeError("Path must be a string");
   }
 
   auto path = toString(runtime, pathHandle);
@@ -37,7 +38,8 @@ CallResult<HermesValue> aliuFSmkdir(void *, Runtime *runtime, NativeArgs args) {
 
   if (mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
     if (errno != EEXIST)
-      return runtime->raiseError(strerror(errno));
+      return runtime->raiseError(static_cast<const StringRef>(
+          std::string(strerror(errno)) + ": " + path));
   }
 
   return HermesValue::encodeUndefinedValue();
@@ -48,13 +50,12 @@ CallResult<HermesValue>
 aliuFSexists(void *, Runtime *runtime, NativeArgs args) {
   auto pathHandle = args.dyncastArg<StringPrimitive>(0);
   if (!pathHandle) {
-    return runtime->raiseTypeError("Path has to be a string");
+    return runtime->raiseTypeError("Path must be a string");
   }
 
   auto path = toString(runtime, pathHandle);
 
-  struct stat buffer;
-  auto exists = stat(path.c_str(), &buffer) == 0;
+  auto exists = access(path.c_str(), F_OK) == 0;
 
   ::hermes::hermesLog(
       "AliuHermes", "AliuFS.exists %s = %d", path.c_str(), exists);
@@ -67,7 +68,7 @@ CallResult<HermesValue>
 aliuFSreaddir(void *, Runtime *runtime, NativeArgs args) {
   auto pathHandle = args.dyncastArg<StringPrimitive>(0);
   if (!pathHandle) {
-    return runtime->raiseTypeError("Path has to be a string");
+    return runtime->raiseTypeError("Path must be a string");
   }
 
   auto path = toString(runtime, pathHandle);
@@ -127,7 +128,7 @@ CallResult<HermesValue>
 aliuFSwriteFile(void *, Runtime *runtime, NativeArgs args) {
   auto pathHandle = args.dyncastArg<StringPrimitive>(0);
   if (!pathHandle) {
-    return runtime->raiseTypeError("Path has to be a string");
+    return runtime->raiseTypeError("Path must be a string");
   }
 
   auto path = toString(runtime, pathHandle);
@@ -172,7 +173,7 @@ aliuFSwriteFile(void *, Runtime *runtime, NativeArgs args) {
   }
 
   return runtime->raiseTypeError(
-      "Content has to be a string or an ArrayBuffer");
+      "Content must be a string or ArrayBuffer");
 }
 
 // AliuFS.readFile(path: string, encoding: "text" | "binary" = "text"): string |
@@ -181,7 +182,7 @@ CallResult<HermesValue>
 aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
   auto pathHandle = args.dyncastArg<StringPrimitive>(0);
   if (!pathHandle) {
-    return runtime->raiseTypeError("Path has to be a string");
+    return runtime->raiseTypeError("Path must be a string");
   }
 
   auto path = toString(runtime, pathHandle);
@@ -190,7 +191,7 @@ aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
 
   auto encodingHandle = args.dyncastArg<StringPrimitive>(1);
   if (!encodingHandle) {
-    return runtime->raiseTypeError("Encoding has to be a string");
+    return runtime->raiseTypeError("Encoding must be a string");
   }
 
   auto encoding = toString(runtime, encodingHandle);
@@ -202,7 +203,7 @@ aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
     }
 
     fseek(f, 0, SEEK_END);
-    auto size = ftell(f);
+    size_t size = ftell(f);
     fseek(f, 0, SEEK_SET);
 
     char s[size];
@@ -227,7 +228,7 @@ aliuFSreadFile(void *, Runtime *runtime, NativeArgs args) {
     }
 
     fseek(f, 0, SEEK_END);
-    auto size = ftell(f);
+    size_t size = ftell(f);
     fseek(f, 0, SEEK_SET);
 
     auto buffer = runtime->makeHandle(JSArrayBuffer::create(
@@ -261,7 +262,7 @@ Handle<JSObject> createAliuFSObject(Runtime *runtime, const JSLibFlags &flags) {
 
   DefinePropertyFlags constantDPF =
       DefinePropertyFlags::getDefaultNewPropertyFlags();
-  constantDPF.enumerable = 0;
+  constantDPF.enumerable = 1;
   constantDPF.writable = 0;
   constantDPF.configurable = 0;
 
@@ -282,6 +283,8 @@ Handle<JSObject> createAliuFSObject(Runtime *runtime, const JSLibFlags &flags) {
   defineInternMethod(P::exists, aliuFSexists);
   defineInternMethod(P::writeFile, aliuFSwriteFile);
   defineInternMethod(P::readFile, aliuFSreadFile);
+  defineInternMethod(P::remove, aliuFSremove);
+
 
   JSObject::preventExtensions(*intern);
 

@@ -166,7 +166,7 @@ hermesInternalRun(void *, Runtime *runtime, NativeArgs args) {
     fclose(f);
     buffer = std::make_unique<SmartBuffer>(buf, size);
   } else {
-    return runtime->raiseTypeError("Buffer has to be an ArrayBuffer");
+    return runtime->raiseTypeError("Buffer must be an ArrayBuffer");
   }
 
   auto bytecode_err =
@@ -368,7 +368,7 @@ Handle<JSObject> createAliuHermesObject(
 
   DefinePropertyFlags constantDPF =
       DefinePropertyFlags::getDefaultNewPropertyFlags();
-  constantDPF.enumerable = 0;
+  constantDPF.enumerable = 1;
   constantDPF.writable = 0;
   constantDPF.configurable = 0;
 
