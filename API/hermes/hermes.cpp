@@ -1484,6 +1484,7 @@ jsi::Value HermesRuntimeImpl::evaluateJavaScript(
             "Failed to read specified number of bytes: %s",
             strerror(errno));
         fclose(file);
+        free(data);
         return jsi::Value::null();
       }
       fclose(file);
@@ -1519,12 +1520,13 @@ jsi::Value HermesRuntimeImpl::evaluateJavaScript(
             "AliuHermes",
             "Failed to read bootstrap.js from packageCodePath: %s",
             strerror(errno));
+        free(data);
         return jsi::Value::null();
       }
       zip_entry_close(zip);
       zip_close(zip);
-
-      bootstrap = std::string(::hermes::vm::ASCIIRef((char *)data, size).data());
+      bootstrap = std::string((char*)data);
+      free(data); // std::string makes a copy
     }
 
     evaluateJavaScript(std::make_unique<jsi::StringBuffer>(bootstrap), "bootstrap");
