@@ -1489,6 +1489,7 @@ jsi::Value HermesRuntimeImpl::evaluateJavaScript(
       fclose(file);
 
       bootstrap = std::string(data);
+      free(data); // std::string makes a copy
     } else {
       ::hermes::hermesLog("AliuHermes", "Loading bootstrap from APK");
 
