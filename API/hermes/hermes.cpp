@@ -1450,7 +1450,7 @@ jsi::Value HermesRuntimeImpl::evaluateJavaScript(
   if (isMainBundle) {
     ::hermes::hermesLog("AliuHermes", "Injecting bootstrap");
 
-    auto preBootstrap = std::string("nativeModuleProxy.AliucordNative.getConstants()");
+    std::string preBootstrap = "nativeModuleProxy.AliucordNative.getConstants()";
     auto constants = evaluateJavaScript(std::make_unique<jsi::StringBuffer>(preBootstrap), "pre-bootstrap")
                              .asObject(*this);
     auto bootstrapPath = constants.getProperty(*this, "externalStorageDirectory")
