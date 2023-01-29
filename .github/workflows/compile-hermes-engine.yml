@@ -88,18 +88,19 @@ jobs:
       - name: Extract binaries
         run: |
           cd ~/artifacts
+          ls
           echo "Making directories for platforms"
           mkdir linux64-bin
           mkdir osx-bin
           mkdir win64-bin
           echo "Extracting Linux binary"
-          unzip hermesc-linux.zip -d ~/artifacts/linux64-bin
+          unzip ~/artifacts/hermesc-linux.zip -d ~/artifacts/linux64-bin
           ls ~/artifacts/linux64-bin
           echo "Extracting Darwin/MacOS binary"
-          unzip hermesc-mac.zip -d ~/artifacts/osx-bin
+          unzip ~/artifacts/hermesc-mac.zip -d ~/artifacts/osx-bin
           ls ~/artifacts/osx-bin
           echo "Extracting Windows binary"
-          unzip hermesc-windows.zip -d ~/artifacts/win64-bin
+          unzip ~/artifacts/hermesc-windows.zip -d ~/artifacts/win64-bin
           ls ~/artifacts/win64-bin
           rm -rf ~/artifacts/*.zip
           echo "Finished."
