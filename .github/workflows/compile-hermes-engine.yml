@@ -1,0 +1,114 @@
+name: Compile Hermes Engine
+
+on:
+  workflow_dispatch
+
+jobs:
+  build-windows:
+    runs-on: "windows-2019"
+
+    steps:
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+      - uses: actions/checkout@v2
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          vs-version: '16.5'
+      - name: Compile Hermes for Windows
+        run: |
+          choco install ninja
+          cmake -S . -B build -G 'Visual Studio 16 2019' -DCMAKE_BUILD_TYPE=Release
+          cmake --build ./build --config Release --target hermesc
+          cd .\build && msbuild github-cli-release.vcxproj /p:Configuration=Release
+      - uses: actions/upload-artifact@v3
+        name: Upload Windows Binaries
+        with:
+          name: hermes-cli-windows
+          path: build/github
+
+  build-linux:
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+      - uses: actions/checkout@v2
+      - name: Compile Hermes for Linux
+        run: |
+          sudo apt update
+          sudo apt install cmake git ninja-build libicu-dev python2 zip libreadline-dev
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build ./build --config Release --target hermesc
+          cd ./build && ninja github-cli-release
+      - uses: actions/upload-artifact@v3
+        name: Upload Linux Binaries
+        with:
+          name: hermes-cli-linux
+          path: build/github
+  
+  build-mac:
+    runs-on: "macos-latest"
+
+    steps:
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+      - uses: actions/checkout@v2
+      - name: Compile Hermes for MacOS
+        run: |  
+          brew install cmake git ninja
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build ./build --config Release --target hermesc
+          cd ./build && ninja github-cli-release
+      - uses: actions/upload-artifact@v3
+        name: Upload MacOS Binaries
+        with:
+          name: hermes-cli-mac
+          path: build/github
+  package:
+    runs-on: "ubuntu-latest"
+    if: ${{ always() }}
+    needs: [build-windows, build-linux, build-mac]
+
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: hermes-cli-linux
+          path: ~/artifacts
+          
+      - uses: actions/download-artifact@v3
+        with:
+          name: hermes-cli-mac
+          path: ~/artifacts
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: hermes-cli-windows
+          path: ~/artifacts
+
+      - name: Extract binaries
+        run: |
+          cd ~/artifacts
+          echo "Making directories for platforms"
+          mkdir linux64-bin
+          mkdir osx-bin
+          mkdir win64-bin
+          echo "Extracting Linux binaries"
+          tar -xvf hermes-cli-linux-v0.11.0.tar.gz -C ~/artifacts/linux64-bin
+          ls ~/artifacts/linux64-bin
+          echo "Extracting Darwin/MacOS binaries"
+          tar -xvf hermes-cli-darwin-v0.11.0.tar.gz -C ~/artifacts/osx-bin
+          ls ~/artifacts/osx-bin
+          echo "Extracting Windows binaries"
+          tar -xvf hermes-cli-windows-v0.11.0.tar.gz -C ~/artifacts/win64-bin
+          ls ~/artifacts/win64-bin
+          rm -rf ~/artifacts/*.tar.gz
+          echo "Finished."
+      
+      - uses: actions/upload-artifact@v3
+        name: Upload Hermes CLI Package
+        with:
+          name: hermes-cli-package
+          path: ~/artifacts
