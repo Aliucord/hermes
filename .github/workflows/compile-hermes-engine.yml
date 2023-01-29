@@ -64,46 +64,26 @@ jobs:
         with:
           name: hermesc-mac
           path: build/bin/hermesc
+          
   package:
     runs-on: "ubuntu-latest"
-    if: ${{ always() }}
     needs: [build-windows, build-linux, build-mac]
 
     steps:
       - uses: actions/download-artifact@v3
         with:
           name: hermesc-linux
-          path: ~/artifacts
+          path: ~/artifacts/linux64-bin
           
       - uses: actions/download-artifact@v3
         with:
           name: hermesc-mac
-          path: ~/artifacts
+          path: ~/artifacts/osx-bin
 
       - uses: actions/download-artifact@v3
         with:
           name: hermesc-windows
-          path: ~/artifacts
-
-      - name: Extract binaries
-        run: |
-          cd ~/artifacts
-          ls
-          echo "Making directories for platforms"
-          mkdir linux64-bin
-          mkdir osx-bin
-          mkdir win64-bin
-          echo "Extracting Linux binary"
-          unzip ~/artifacts/hermesc-linux.zip -d ~/artifacts/linux64-bin
-          ls ~/artifacts/linux64-bin
-          echo "Extracting Darwin/MacOS binary"
-          unzip ~/artifacts/hermesc-mac.zip -d ~/artifacts/osx-bin
-          ls ~/artifacts/osx-bin
-          echo "Extracting Windows binary"
-          unzip ~/artifacts/hermesc-windows.zip -d ~/artifacts/win64-bin
-          ls ~/artifacts/win64-bin
-          rm -rf ~/artifacts/*.zip
-          echo "Finished."
+          path: ~/artifacts/win64-bin
       
       - uses: actions/upload-artifact@v3
         name: Upload Hermesc Package
