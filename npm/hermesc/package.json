@@ -1,6 +1,6 @@
 {
     "name": "@aliucord/hermesc",
-    "version": "0.11.0",
+    "version": "<version>",
     "private": false,
     "description": "Hermes compiler binaries",
     "license": "MIT",

@@ -7,5 +7,4 @@ osx-bin
 package-lock.json
 destroot
 LICENSE
-README.md
 hermes.podspec
