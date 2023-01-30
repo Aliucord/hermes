@@ -8,6 +8,10 @@ on:
         type: boolean
         description: Publish release to NPM
         default: false
+      version:
+        type: string
+        description: Version of the package to be set while publishing
+        required: true
 
 jobs:
   build-windows:
@@ -105,6 +109,7 @@ jobs:
         if: ${{ inputs.release == true }}
         run: |
           cd npm/hermesc
+          npm pkg set version=${{ inputs.version }}
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
