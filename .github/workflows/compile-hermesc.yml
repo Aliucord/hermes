@@ -10,8 +10,9 @@ on:
         default: false
       version:
         type: string
-        description: Version of the package to be set while publishing
+        description: Package version
         required: true
+        default: ${{ github.ref_name }}
 
 jobs:
   build-windows:
