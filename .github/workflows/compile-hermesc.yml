@@ -90,8 +90,18 @@ jobs:
           name: hermesc-windows
           path: ./npm/hermesc/win64-bin
       
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: NPM Publish
+        run: |
+          cd npm
+          $YARN install
+          $YARN create-npms
+
       - uses: actions/upload-artifact@v3
         name: Upload Hermesc Package
         with:
           name: hermesc-package
-          path: /npm/hermesc
+          path: ./npm/hermesc
