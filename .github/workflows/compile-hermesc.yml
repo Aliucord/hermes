@@ -93,14 +93,14 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
+          registry-url: 'https://registry.npmjs.org'
 
       - name: NPM Publish
         run: |
           cd npm
-          ls ./hermesc
-          ls ./hermesc/win64-bin 
-          npm install
-          npm run create-npms
+          npm publish hermes
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - uses: actions/upload-artifact@v3
         name: Upload Hermesc Package
