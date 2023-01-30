@@ -97,8 +97,8 @@ jobs:
       - name: NPM Publish
         run: |
           cd npm
-          ls /hermesc
-          ls /hermesc/win64-bin 
+          ls ./hermesc
+          ls ./hermesc/win64-bin 
           npm install
           npm run create-npms
 
