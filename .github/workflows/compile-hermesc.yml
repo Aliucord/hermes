@@ -75,28 +75,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         
-      - name: "Prepare files"
-        run: mkdir temp
-        
       - uses: actions/download-artifact@v3
         with:
           name: hermesc-linux
-          path: /temp/linux64-bin
+          path: ./npm/hermesc/linux64-bin
           
       - uses: actions/download-artifact@v3
         with:
           name: hermesc-mac
-          path: /temp/osx-bin
+          path: ./npm/hermesc/osx-bin
 
       - uses: actions/download-artifact@v3
         with:
           name: hermesc-windows
-          path: /temp/win64-bin
-
-      - name: "NPM Package"
-        run: |
-          cp /temp/* /npm/hermesc
-          ls /npm/hermesc
+          path: ./npm/hermesc/win64-bin
       
       - uses: actions/upload-artifact@v3
         name: Upload Hermesc Package
