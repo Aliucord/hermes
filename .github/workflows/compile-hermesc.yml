@@ -97,8 +97,8 @@ jobs:
 
       - name: NPM Publish
         run: |
-          cd npm
-          npm publish hermesc
+          cd npm/hermesc
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
