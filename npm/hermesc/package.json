@@ -1,6 +1,6 @@
 {
     "name": "hermesc",
-    "version": "%VERSION%",
+    "version": "0.11.0",
     "private": false,
     "description": "Hermes compiler binaries",
     "license": "MIT",
