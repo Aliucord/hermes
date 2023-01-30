@@ -121,5 +121,5 @@ jobs:
       - uses: actions/upload-artifact@v3
         name: Upload Hermesc Tarball
         with:
-          name: hermesc-package
-          path: ./npm/hermesc/hermesc-${{ inputs.version || github.ref_name }}
+          name: hermesc-tarball
+          path: ./npm/hermesc/hermesc-${{ inputs.version || github.ref_name }}.tgz
