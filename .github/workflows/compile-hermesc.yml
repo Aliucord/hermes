@@ -22,6 +22,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           variant: sccache
+          key: windows
       - uses: actions/checkout@v3
       - name: Compile Hermesc for Windows
         run: |
@@ -47,6 +48,8 @@ jobs:
     steps:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux
       - uses: actions/checkout@v3
       - name: Compile Hermesc for Linux
         run: |
@@ -66,6 +69,8 @@ jobs:
     steps:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: macos
       - uses: actions/checkout@v3
       - name: Compile Hermesc for MacOS
         run: |  
@@ -107,13 +112,15 @@ jobs:
 
       - name: Make NPM Tarball
         run:
-          npm pack ./hermesc
+          cd npm/hermesc
+          npm pkg set version=${{ inputs.version || github.ref_name }}
+          npm pack
 
       - uses: actions/upload-artifact@v3
         name: Upload Hermesc Tarball
         with:
           name: hermesc-tarball
-          path: ./npm/*.tgz
+          path: ./npm/hermesc/*.tgz
 
       - name: NPM Publish
         if: ${{ inputs.release == true }}
