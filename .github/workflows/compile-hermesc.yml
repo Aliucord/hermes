@@ -1,7 +1,13 @@
 name: Compile Hermesc Package
 
 on:
-  workflow_dispatch
+  push:
+  workflow_dispatch:
+    inputs:
+      release:
+        type: boolean
+        description: Publish release to NPM
+        default: false
 
 jobs:
   build-windows:
@@ -96,6 +102,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: NPM Publish
+        if: ${{ inputs.release == true }}
         run: |
           cd npm/hermesc
           npm publish --access public

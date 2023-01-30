@@ -6,11 +6,6 @@ concurrency:
   
 on:
   push:
-      branches:
-        - aliu
-        - 0.11.0-aliucord
-        - 0.12.0-aliucord
-
   pull_request:
   workflow_dispatch:
 
