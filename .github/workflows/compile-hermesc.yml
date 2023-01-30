@@ -1,6 +1,7 @@
 name: Compile Hermesc Package
 
 on:
+  pull_request:
   push:
   workflow_dispatch:
     inputs:
