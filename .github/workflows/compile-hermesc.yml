@@ -11,8 +11,7 @@ on:
       version:
         type: string
         description: Package version
-        required: true
-        default: ${{ github.ref_name }}
+        required: false
 
 jobs:
   build-windows:
@@ -110,7 +109,7 @@ jobs:
         if: ${{ inputs.release == true }}
         run: |
           cd npm/hermesc
-          npm pkg set version=${{ inputs.version }}
+          npm pkg set version=${{ inputs.version || github.ref_name }}
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
