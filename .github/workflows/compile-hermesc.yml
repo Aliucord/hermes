@@ -105,6 +105,16 @@ jobs:
           node-version: 18
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Make NPM Tarball
+        run:
+          npm pack ./hermesc
+
+      - uses: actions/upload-artifact@v3
+        name: Upload Hermesc Tarball
+        with:
+          name: hermesc-tarball
+          path: ./npm/*.tgz
+
       - name: NPM Publish
         if: ${{ inputs.release == true }}
         run: |
@@ -113,13 +123,3 @@ jobs:
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      
-      - name: Make NPM Tarball
-        run:
-          npm pack
-
-      - uses: actions/upload-artifact@v3
-        name: Upload Hermesc Tarball
-        with:
-          name: hermesc-tarball
-          path: ./npm/hermesc/hermesc-${{ inputs.version || github.ref_name }}.tgz
