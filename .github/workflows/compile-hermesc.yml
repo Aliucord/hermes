@@ -111,7 +111,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Make NPM Tarball
-        run:
+        run: |
           cd npm/hermesc
           npm pkg set version=${{ inputs.version || github.ref_name }}
           npm pack
