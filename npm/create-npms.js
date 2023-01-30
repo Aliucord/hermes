@@ -38,7 +38,7 @@ function createNpm(dirname) {
   shell.sed("-i", "%VERSION%", mainpkg.version, "package.json");
   shell.exec("${YARN:-yarn} pack");
   verifyManifest(require(`${here}/${dirname}/package.json`));
-  shell.cp(dirname, here);
+  shell.cp(dirname + "*.tgz", here);
   shell.cd(here);
   shell.rm("-rf", tmpdir);
 }
