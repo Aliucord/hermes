@@ -113,9 +113,13 @@ jobs:
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Make NPM Tarball
+        run:
+          npm pack
 
       - uses: actions/upload-artifact@v3
-        name: Upload Hermesc Package
+        name: Upload Hermesc Tarball
         with:
           name: hermesc-package
-          path: ./npm/hermesc
+          path: ./npm/hermesc/hermesc-${{ inputs.version || github.ref_name }}
