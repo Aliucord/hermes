@@ -1,4 +1,4 @@
-name: Compile Hermes Engine
+name: Compile Hermesc Package
 
 on:
   workflow_dispatch
@@ -22,15 +22,18 @@ jobs:
           choco install ninja
           cmake -S . -B build -G 'Visual Studio 16 2019' -DCMAKE_BUILD_TYPE=Release
           cmake --build ./build --config Release --target hermesc
+          Copy-Item -Path "c:\windows\system32\msvcp140.dll" -Destination "/build/bin/Release"
+          Copy-Item -Path "c:\windows\system32\vcruntime140.dll" -Destination "/build/bin/Release"
+          Copy-Item -Path "c:\windows\system32\vcruntime140_1.dll" -Destination "/build/bin/Release"
       - uses: actions/upload-artifact@v3
         name: Upload Windows Binaries
         with:
           name: hermesc-windows
           path: |
             build/bin/Release/hermesc.exe
-            c:\windows\system32\vcruntime140_1.dll
-            c:\windows\system32\vcruntime140.dll
-            c:\windows\system32\msvcp140.dll
+            build/bin/Release/vcruntime140_1.dll
+            build/bin/Release/vcruntime140.dll
+            build/bin/Release/msvcp140.dll
 
   build-linux:
     runs-on: "ubuntu-latest"
