@@ -13,18 +13,14 @@ jobs:
         with:
           variant: sccache
       - uses: actions/checkout@v3
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
-        with:
-          vs-version: '16.5'
       - name: Compile Hermesc for Windows
         run: |
           choco install ninja
           cmake -S . -B build -G 'Visual Studio 16 2019' -DCMAKE_BUILD_TYPE=Release
           cmake --build ./build --config Release --target hermesc
-          Copy-Item -Path "c:\windows\system32\msvcp140.dll" -Destination "/build/bin/Release"
-          Copy-Item -Path "c:\windows\system32\vcruntime140.dll" -Destination "/build/bin/Release"
-          Copy-Item -Path "c:\windows\system32\vcruntime140_1.dll" -Destination "/build/bin/Release"
+          Copy-Item -Path "c:\windows\system32\msvcp140.dll" -Destination ".\build\bin\Release"
+          Copy-Item -Path "c:\windows\system32\vcruntime140.dll" -Destination ".\build\bin\Release"
+          Copy-Item -Path "c:\windows\system32\vcruntime140_1.dll" -Destination ".\build\bin\Release"
       - uses: actions/upload-artifact@v3
         name: Upload Windows Binaries
         with:
