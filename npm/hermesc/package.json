@@ -1,0 +1,20 @@
+{
+    "name": "hermesc",
+    "version": "%VERSION%",
+    "private": false,
+    "description": "Hermes compiler binaries",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:Aliucord/hermes.git"
+    },
+    "files": [
+        "README.md",
+        "linux64-bin/hermesc",
+        "osx-bin/hermesc",
+        "win64-bin/hermesc.exe",
+        "win64-bin/msvcp140.dll",
+        "win64-bin/vcruntime140.dll",
+        "win64-bin/vcruntime140_1.dll"
+    ]
+}

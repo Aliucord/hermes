@@ -12,7 +12,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           variant: sccache
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
@@ -26,7 +26,11 @@ jobs:
         name: Upload Windows Binaries
         with:
           name: hermesc-windows
-          path: build/bin/Release/hermesc.exe
+          path: |
+            build/bin/Release/hermesc.exe
+            c:\windows\system32\vcruntime140_1.dll
+            c:\windows\system32\vcruntime140.dll
+            c:\windows\system32\msvcp140.dll
 
   build-linux:
     runs-on: "ubuntu-latest"
@@ -34,7 +38,7 @@ jobs:
     steps:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Compile Hermesc for Linux
         run: |
           sudo apt update
@@ -53,7 +57,7 @@ jobs:
     steps:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Compile Hermesc for MacOS
         run: |  
           brew install cmake git ninja
@@ -70,23 +74,25 @@ jobs:
     needs: [build-windows, build-linux, build-mac]
 
     steps:
+      - uses: actions/checkout@v3
+        
       - uses: actions/download-artifact@v3
         with:
           name: hermesc-linux
-          path: ~/artifacts/linux64-bin
+          path: /npm/hermesc/linux64-bin
           
       - uses: actions/download-artifact@v3
         with:
           name: hermesc-mac
-          path: ~/artifacts/osx-bin
+          path: /npm/hermesc/osx-bin
 
       - uses: actions/download-artifact@v3
         with:
           name: hermesc-windows
-          path: ~/artifacts/win64-bin
+          path: /npm/hermesc/win64-bin
       
       - uses: actions/upload-artifact@v3
         name: Upload Hermesc Package
         with:
           name: hermesc-package
-          path: ~/artifacts
+          path: /npm/hermesc
